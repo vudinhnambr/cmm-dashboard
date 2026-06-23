@@ -182,7 +182,7 @@
 .tbl-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
 table.itr {
   width: 100%; border-collapse: collapse; font-size: 13px;
-  min-width: 880px;
+  min-width: 1040px;
 }
 table.itr thead th {
   text-align: left; padding: 11px 14px;
@@ -348,3 +348,43 @@ table.itr tbody tr:last-child td { border-bottom: none; }
   padding: 4px 12px; border-radius: 8px; transition: color 0.13s, border-color 0.13s;
 }
 .af-clear:hover { color: var(--rose); border-color: var(--rose); }
+
+/* expand button + ring SN + detail row */
+.th-expand { width: 36px; padding-left: 10px !important; padding-right: 0 !important; }
+.td-expand { width: 36px; padding-left: 10px !important; padding-right: 0 !important; text-align: center; }
+.expand-btn {
+  width: 24px; height: 24px; display: inline-grid; place-items: center;
+  background: var(--bg-void); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--txt-low); cursor: pointer; transition: all 0.15s;
+}
+.expand-btn:hover { color: var(--signal); border-color: var(--signal-dim); }
+.expand-btn svg { transition: transform 0.18s ease; }
+.expand-btn.on { color: var(--signal); border-color: var(--signal-dim); background: rgba(62,235,171,0.08); }
+.expand-btn.on svg { transform: rotate(90deg); }
+
+.sn-cell { font-family: var(--font-mono); font-size: 11px; color: var(--txt-mid); white-space: nowrap; }
+
+table.itr tbody tr.row-open td { background: var(--bg-panel-2); border-bottom-color: transparent; }
+table.itr tbody tr.detail-row td { background: var(--bg-panel-2); border-bottom: 1px solid var(--grid-line); padding-top: 4px; }
+.detail-grid {
+  display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px;
+  padding: 4px 4px 14px;
+}
+.detail-item {
+  background: var(--bg-void); border: 1px solid var(--border);
+  border-radius: 9px; padding: 12px 14px;
+}
+.detail-label {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--signal); margin-bottom: 8px;
+}
+.detail-value {
+  font-size: 13px; color: var(--txt-hi); line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word;
+}
+.detail-value .muted { color: var(--txt-low); font-style: italic; }
+
+@media (max-width: 700px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity, RefreshCw, Search, AlertTriangle,
-  CheckCircle2, Package, Layers,
+  CheckCircle2, Package, Layers, ChevronRight, Hash, Ruler, MessageSquare,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -80,6 +80,15 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dueFilter, setDueFilter] = useState('all'); // all | overdue | duesoon
   const [sort, setSort] = useState({ key: 'category', dir: 1 });
+  const [expanded, setExpanded] = useState(() => new Set());
+
+  function toggleExpand(id) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   // Cuộn xuống bảng khi áp filter từ KPI/chart
   function scrollToTable() {
@@ -351,9 +360,11 @@ export default function App() {
           <table className="itr">
             <thead>
               <tr>
+                <th className="th-expand"></th>
                 <th onClick={() => toggleSort('category')}>Cat {arrow('category')}</th>
                 <th onClick={() => toggleSort('partName')}>Part Name {arrow('partName')}</th>
                 <th onClick={() => toggleSort('refNo')}>Ref No {arrow('refNo')}</th>
+                <th onClick={() => toggleSort('ringSN')}>Ring SN {arrow('ringSN')}</th>
                 <th onClick={() => toggleSort('target')}>Target {arrow('target')}</th>
                 <th onClick={() => toggleSort('completed')}>Done {arrow('completed')}</th>
                 <th onClick={() => toggleSort('balance')}>Bal {arrow('balance')}</th>
@@ -367,11 +378,26 @@ export default function App() {
                 const du = daysUntil(r.dueDate);
                 const isComplete = r.status.toLowerCase() === 'completed';
                 const dueCls = !r.dueDate ? 'ok' : (du < 0 && !isComplete) ? 'overdue' : (du <= 7 && !isComplete) ? 'soon' : 'ok';
+                const hasDetail = r.features || r.comment;
+                const isOpen = expanded.has(r.id);
                 return (
-                  <tr key={r.id}>
+                  <React.Fragment key={r.id}>
+                  <tr className={isOpen ? 'row-open' : ''}>
+                    <td className="td-expand">
+                      {hasDetail ? (
+                        <button
+                          className={`expand-btn ${isOpen ? 'on' : ''}`}
+                          onClick={() => toggleExpand(r.id)}
+                          title="Xem CMM Features & Comment"
+                        >
+                          <ChevronRight size={15} />
+                        </button>
+                      ) : null}
+                    </td>
                     <td><span className={`cat-tag cat-${r.category}`}>{r.category}</span></td>
-                    <td className="part-cell" title={r.comment || ''}>{r.partName}</td>
+                    <td className="part-cell">{r.partName}</td>
                     <td className="ref-cell">{r.refNo || '—'}</td>
+                    <td className="sn-cell">{r.ringSN || '—'}</td>
                     <td className="mono">{r.target}</td>
                     <td className="mono">{r.completed}</td>
                     <td className="mono">{r.balance}</td>
@@ -394,10 +420,28 @@ export default function App() {
                       <span className="dot" />{r.status}
                     </span></td>
                   </tr>
+                  {isOpen && (
+                    <tr className="detail-row">
+                      <td></td>
+                      <td colSpan={10}>
+                        <div className="detail-grid">
+                          <div className="detail-item">
+                            <div className="detail-label"><Ruler size={13} /> CMM Features</div>
+                            <div className="detail-value">{r.features || <span className="muted">— không có —</span>}</div>
+                          </div>
+                          <div className="detail-item">
+                            <div className="detail-label"><MessageSquare size={13} /> Comment</div>
+                            <div className="detail-value">{r.comment || <span className="muted">— không có —</span>}</div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={9}><div className="empty-note" style={{ border: 'none' }}>Không có bản ghi khớp bộ lọc.</div></td></tr>
+                <tr><td colSpan={11}><div className="empty-note" style={{ border: 'none' }}>Không có bản ghi khớp bộ lọc.</div></td></tr>
               )}
             </tbody>
           </table>
