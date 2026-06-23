@@ -80,14 +80,21 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dueFilter, setDueFilter] = useState('all'); // all | overdue | duesoon
   const [sort, setSort] = useState({ key: 'category', dir: 1 });
-  const [expanded, setExpanded] = useState(() => new Set());
+  // Tập các id mà người dùng đã chủ động đảo trạng thái so với mặc định.
+  const [toggled, setToggled] = useState(() => new Set());
 
   function toggleExpand(id) {
-    setExpanded((prev) => {
+    setToggled((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  }
+  // Mặc định: dòng Open (chưa hoàn thành) có dữ liệu thì mở sẵn; Completed thu gọn.
+  function isRowOpen(r, hasDetail) {
+    if (!hasDetail) return false;
+    const defaultOpen = r.status.toLowerCase() !== 'completed';
+    return toggled.has(r.id) ? !defaultOpen : defaultOpen;
   }
 
   // Cuộn xuống bảng khi áp filter từ KPI/chart
@@ -379,7 +386,7 @@ export default function App() {
                 const isComplete = r.status.toLowerCase() === 'completed';
                 const dueCls = !r.dueDate ? 'ok' : (du < 0 && !isComplete) ? 'overdue' : (du <= 7 && !isComplete) ? 'soon' : 'ok';
                 const hasDetail = r.features || r.comment;
-                const isOpen = expanded.has(r.id);
+                const isOpen = isRowOpen(r, hasDetail);
                 return (
                   <React.Fragment key={r.id}>
                   <tr className={isOpen ? 'row-open' : ''}>
