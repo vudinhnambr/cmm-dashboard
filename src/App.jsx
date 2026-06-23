@@ -77,7 +77,7 @@ export default function App() {
   const [state, setState] = useState({ status: 'loading' });
   const [query, setQuery] = useState('');
   const [catFilter, setCatFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('open');
   const [dueFilter, setDueFilter] = useState('all'); // all | overdue | duesoon
   const [sort, setSort] = useState({ key: 'category', dir: 1 });
   // Tập các id mà người dùng đã chủ động đảo trạng thái so với mặc định.
