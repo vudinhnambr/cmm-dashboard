@@ -8,9 +8,9 @@
   --border: #2e3848;
   --border-bright: #3f4b5e;
 
-  --txt-hi: #f2f6fb;
-  --txt-mid: #b4c0d2;
-  --txt-low: #7d8aa0;
+  --txt-hi: #f7fafd;
+  --txt-mid: #cdd6e3;
+  --txt-low: #94a1b6;
 
   /* Signal accents */
   --signal: #3eebab;      /* primary — completed / on-track */

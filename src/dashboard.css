@@ -301,11 +301,50 @@ table.itr tbody tr:last-child td { border-bottom: none; }
 }
 .warn-banner svg { flex-shrink: 0; }
 
-/* due kind label trong bảng */
-.due-kind {
-  display: inline-block; font-family: var(--font-mono); font-size: 9.5px;
-  font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-  margin-right: 7px; padding: 1px 6px; border-radius: 5px;
-  border: 1px solid currentColor; opacity: 0.9; vertical-align: middle;
+/* due cell trong bảng */
+.due-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.2; }
+.due-date-val { font-family: var(--font-mono); font-size: 12.5px; color: var(--txt-mid); }
+.due-kind-sub {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--txt-low);
 }
 .due-late { color: var(--rose); font-weight: 600; }
+
+/* clickable interactions */
+.kpi.clickable { cursor: pointer; transition: transform 0.13s, border-color 0.13s; }
+.kpi.clickable:hover { transform: translateY(-2px); border-color: var(--border-bright); }
+.kpi.clickable::after {
+  content: 'lọc ▸'; position: absolute; top: 14px; right: 14px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--txt-low); text-transform: uppercase; opacity: 0; transition: opacity 0.13s;
+}
+.kpi.clickable:hover::after { opacity: 1; }
+.kpi.clickable.active { border-color: var(--accent, var(--signal)); box-shadow: 0 0 0 1px var(--accent, var(--signal)) inset; }
+.kpi.clickable.active::after { content: '✓ đang lọc'; opacity: 1; color: var(--accent); }
+
+.clickable-title { cursor: pointer; transition: opacity 0.13s; }
+.clickable-title:hover { opacity: 0.75; }
+
+.legend-click:hover { color: var(--txt-hi) !important; }
+
+/* active filters bar */
+.active-filters {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; padding: 10px 14px;
+  background: var(--bg-panel-2); border: 1px solid var(--border-bright);
+  border-radius: 10px;
+}
+.af-label { font-family: var(--font-mono); font-size: 11px; color: var(--txt-low); letter-spacing: 0.06em; text-transform: uppercase; }
+.af-tag {
+  font-family: var(--font-mono); font-size: 11px; color: var(--signal);
+  background: rgba(62,235,171,0.1); border: 1px solid var(--signal-dim);
+  padding: 3px 10px; border-radius: 999px;
+}
+.af-tag.rose { color: var(--rose); background: rgba(255,107,121,0.1); border-color: #5a2a30; }
+.af-tag.amber { color: var(--amber); background: rgba(255,192,107,0.1); border-color: #6b531f; }
+.af-clear {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+  background: var(--bg-elev); border: 1px solid var(--border-bright); color: var(--txt-mid);
+  padding: 4px 12px; border-radius: 8px; transition: color 0.13s, border-color 0.13s;
+}
+.af-clear:hover { color: var(--rose); border-color: var(--rose); }

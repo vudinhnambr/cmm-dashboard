@@ -78,7 +78,19 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [catFilter, setCatFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dueFilter, setDueFilter] = useState('all'); // all | overdue | duesoon
   const [sort, setSort] = useState({ key: 'category', dir: 1 });
+
+  // Cuộn xuống bảng khi áp filter từ KPI/chart
+  function scrollToTable() {
+    setTimeout(() => {
+      document.getElementById('records-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }
+  function applyCatFilter(c) { setCatFilter((p) => (p === c ? 'all' : c)); setDueFilter('all'); scrollToTable(); }
+  function applyStatusFilter(s) { setStatusFilter((p) => (p === s ? 'all' : s)); setDueFilter('all'); scrollToTable(); }
+  function applyDueFilter(d) { setDueFilter((p) => (p === d ? 'all' : d)); setStatusFilter('all'); scrollToTable(); }
+  function clearFilters() { setCatFilter('all'); setStatusFilter('all'); setDueFilter('all'); setQuery(''); }
 
   async function fetchAll() {
     setState({ status: 'loading' });
@@ -113,6 +125,11 @@ export default function App() {
     let r = items;
     if (catFilter !== 'all') r = r.filter((x) => x.category === catFilter);
     if (statusFilter !== 'all') r = r.filter((x) => x.status.toLowerCase() === statusFilter);
+    if (dueFilter === 'overdue') {
+      r = r.filter((x) => { const d = daysUntil(x.dueDate); return d != null && d < 0 && x.status.toLowerCase() !== 'completed'; });
+    } else if (dueFilter === 'duesoon') {
+      r = r.filter((x) => { const d = daysUntil(x.dueDate); return d != null && d >= 0 && d <= 7 && x.status.toLowerCase() !== 'completed'; });
+    }
     if (query.trim()) {
       const q = query.toLowerCase();
       r = r.filter((x) =>
@@ -132,7 +149,7 @@ export default function App() {
       if (av > bv) return 1 * dir;
       return 0;
     });
-  }, [items, catFilter, statusFilter, query, sort]);
+  }, [items, catFilter, statusFilter, dueFilter, query, sort]);
 
   const cats = useMemo(() => ['all', ...new Set(items.map((x) => x.category))], [items]);
 
@@ -200,7 +217,12 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="kpi" style={{ '--accent': 'var(--signal)' }}>
+        <div
+          className={`kpi clickable ${statusFilter === 'completed' ? 'active' : ''}`}
+          style={{ '--accent': 'var(--signal)' }}
+          onClick={() => applyStatusFilter('completed')}
+          title="Lọc job đã hoàn thành"
+        >
           <div className="label">Hoàn thành</div>
           <div className="value">{m.completedJobs}<small> / {m.totalJobs} job</small></div>
           <div className="foot ok"><CheckCircle2 size={13} /> {m.openJobs} job đang mở</div>
@@ -210,7 +232,12 @@ export default function App() {
           <div className="value">{m.totBalance}</div>
           <div className="foot warn"><Layers size={13} /> chi tiết chưa đo / chưa giao</div>
         </div>
-        <div className="kpi" style={{ '--accent': m.overdueCount ? 'var(--rose)' : 'var(--amber)' }}>
+        <div
+          className={`kpi clickable ${dueFilter === 'overdue' ? 'active' : ''}`}
+          style={{ '--accent': m.overdueCount ? 'var(--rose)' : 'var(--amber)' }}
+          onClick={() => applyDueFilter('overdue')}
+          title="Lọc job quá hạn"
+        >
           <div className="label">Cảnh báo hạn</div>
           <div className="value">{m.overdueCount}<small> / {m.dueSoonCount} sắp tới</small></div>
           <div className={`foot ${m.overdueCount ? 'alert' : 'warn'}`}>
@@ -223,35 +250,40 @@ export default function App() {
       <div className="charts-grid">
         <div className="panel">
           <div className="panel-title">Khối lượng theo Category</div>
-          <div className="panel-sub">Qty Target vs Completed</div>
+          <div className="panel-sub">Qty Target vs Completed · nhấp cột để lọc</div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={catData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <XAxis dataKey="name" tick={{ fill: 'var(--txt-mid)', fontSize: 12, fontFamily: 'var(--font-mono)' }} axisLine={{ stroke: 'var(--border)' }} tickLine={false} />
               <YAxis tick={{ fill: 'var(--txt-low)', fontSize: 11, fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="target" name="Target" radius={[4, 4, 0, 0]} fill="var(--border-bright)" />
-              <Bar dataKey="completed" name="Completed" radius={[4, 4, 0, 0]}>
-                {catData.map((d, i) => <Cell key={i} fill={catColor(d.name)} />)}
+              <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+              <Bar dataKey="target" name="Target" radius={[4, 4, 0, 0]} fill="var(--border-bright)" onClick={(d) => applyCatFilter(d.name)} style={{ cursor: 'pointer' }} />
+              <Bar dataKey="completed" name="Completed" radius={[4, 4, 0, 0]} onClick={(d) => applyCatFilter(d.name)} style={{ cursor: 'pointer' }}>
+                {catData.map((d, i) => (
+                  <Cell key={i} fill={catColor(d.name)} opacity={catFilter === 'all' || catFilter === d.name ? 1 : 0.35} />
+                ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
         <div className="panel">
           <div className="panel-title">Trạng thái job</div>
-          <div className="panel-sub">Open vs Completed</div>
+          <div className="panel-sub">Open vs Completed · nhấp để lọc</div>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
-              <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={92} paddingAngle={3} stroke="none">
-                {statusData.map((d, i) => (
-                  <Cell key={i} fill={d.name.toLowerCase() === 'completed' ? 'var(--signal)' : 'var(--amber)'} />
-                ))}
+              <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={92} paddingAngle={3} stroke="none"
+                onClick={(d) => applyStatusFilter(d.name.toLowerCase())} style={{ cursor: 'pointer' }}>
+                {statusData.map((d, i) => {
+                  const on = statusFilter === 'all' || statusFilter === d.name.toLowerCase();
+                  return <Cell key={i} fill={d.name.toLowerCase() === 'completed' ? 'var(--signal)' : 'var(--amber)'} opacity={on ? 1 : 0.35} />;
+                })}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
           <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: -8 }}>
             {statusData.map((d) => (
-              <span key={d.name} className="mono" style={{ color: 'var(--txt-mid)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span key={d.name} className="mono legend-click" onClick={() => applyStatusFilter(d.name.toLowerCase())}
+                style={{ color: 'var(--txt-mid)', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                 <span className="dot" style={{ background: d.name.toLowerCase() === 'completed' ? 'var(--signal)' : 'var(--amber)' }} />
                 {d.name} · {d.value}
               </span>
@@ -263,14 +295,14 @@ export default function App() {
       <SectionHead eyebrow="03 — Schedule" title="Theo dõi Due Date" />
       <div className="charts-grid">
         <div className="panel">
-          <div className="panel-title" style={{ color: 'var(--rose)' }}>Quá hạn</div>
-          <div className="panel-sub">{m.overdue.length} job · Status chưa Completed</div>
+          <div className="panel-title clickable-title" style={{ color: 'var(--rose)' }} onClick={() => applyDueFilter('overdue')}>Quá hạn →</div>
+          <div className="panel-sub">{m.overdue.length} job · Status chưa Completed · nhấp để lọc bảng</div>
           {m.overdue.length === 0
             ? <div className="empty-note">Không có job nào quá hạn.</div>
             : <DueList rows={m.overdue} accent="var(--rose)" />}
         </div>
         <div className="panel">
-          <div className="panel-title" style={{ color: 'var(--amber)' }}>Sắp đến hạn (≤ 7 ngày)</div>
+          <div className="panel-title clickable-title" style={{ color: 'var(--amber)' }} onClick={() => applyDueFilter('duesoon')}>Sắp đến hạn (≤ 7 ngày) →</div>
           <div className="panel-sub">{m.dueSoon.length} job</div>
           {m.dueSoon.length === 0
             ? <div className="empty-note">Không có job nào trong 7 ngày tới.</div>
@@ -279,7 +311,18 @@ export default function App() {
       </div>
 
       <SectionHead eyebrow="04 — Records" title="Bảng chi tiết" />
-      <div className="panel">
+      <div className="panel" id="records-table">
+        {(catFilter !== 'all' || statusFilter !== 'all' || dueFilter !== 'all' || query) && (
+          <div className="active-filters">
+            <span className="af-label">Đang lọc:</span>
+            {catFilter !== 'all' && <span className="af-tag">Category: {catFilter}</span>}
+            {statusFilter !== 'all' && <span className="af-tag">Status: {statusFilter}</span>}
+            {dueFilter === 'overdue' && <span className="af-tag rose">Quá hạn</span>}
+            {dueFilter === 'duesoon' && <span className="af-tag amber">Sắp đến hạn</span>}
+            {query && <span className="af-tag">Tìm: "{query}"</span>}
+            <button className="af-clear" onClick={clearFilters}>Xoá lọc ×</button>
+          </div>
+        )}
         <div className="table-toolbar">
           <div className="search-box">
             <Search size={15} />
@@ -290,14 +333,14 @@ export default function App() {
           </div>
           <div className="chips">
             {cats.map((c) => (
-              <button key={c} className={`chip ${catFilter === c ? 'active' : ''}`} onClick={() => setCatFilter(c)}>
+              <button key={c} className={`chip ${catFilter === c ? 'active' : ''}`} onClick={() => { setCatFilter(c); setDueFilter('all'); }}>
                 {c === 'all' ? 'Tất cả category' : c}
               </button>
             ))}
           </div>
           <div className="chips">
             {['all', 'open', 'completed'].map((s) => (
-              <button key={s} className={`chip ${statusFilter === s ? 'active' : ''}`} onClick={() => setStatusFilter(s)}>
+              <button key={s} className={`chip ${statusFilter === s ? 'active' : ''}`} onClick={() => { setStatusFilter(s); setDueFilter('all'); }}>
                 {s === 'all' ? 'Mọi status' : s}
               </button>
             ))}
@@ -315,7 +358,7 @@ export default function App() {
                 <th onClick={() => toggleSort('completed')}>Done {arrow('completed')}</th>
                 <th onClick={() => toggleSort('balance')}>Bal {arrow('balance')}</th>
                 <th onClick={() => toggleSort('progress')}>Progress {arrow('progress')}</th>
-                <th onClick={() => toggleSort('dueDate')}>Due Date (loại) {arrow('dueDate')}</th>
+                <th onClick={() => toggleSort('dueDate')}>Due Date {arrow('dueDate')}</th>
                 <th onClick={() => toggleSort('status')}>Status {arrow('status')}</th>
               </tr>
             </thead>
@@ -338,13 +381,13 @@ export default function App() {
                     </td>
                     <td className={`due-tag ${dueCls}`}>
                       {r.dueDate ? (
-                        <>
-                          <span className="due-kind" style={{ color: r.category === 'Shipment' ? 'var(--azure)' : r.category === 'ITR' ? 'var(--violet)' : 'var(--txt-low)' }}>
-                            {r.category}
+                        <div className="due-cell">
+                          <span className="due-date-val">{fmtDate(r.dueDate)}</span>
+                          <span className="due-kind-sub">
+                            {r.category === 'Shipment' ? 'Shipment Due' : r.category === 'ITR' ? 'ITR Due' : 'Due'}
+                            {!isComplete && du < 0 && <span className="due-late"> · {Math.abs(du)}d trễ</span>}
                           </span>
-                          <span>{fmtDate(r.dueDate)}</span>
-                          {!isComplete && du < 0 && <span className="due-late"> ({Math.abs(du)}d trễ)</span>}
-                        </>
+                        </div>
                       ) : '—'}
                     </td>
                     <td><span className={`badge ${isComplete ? 'completed' : 'open'}`}>
