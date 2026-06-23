@@ -300,3 +300,12 @@ table.itr tbody tr:last-child td { border-bottom: none; }
   font-family: var(--font-mono); font-size: 12px; line-height: 1.5;
 }
 .warn-banner svg { flex-shrink: 0; }
+
+/* due kind label trong bảng */
+.due-kind {
+  display: inline-block; font-family: var(--font-mono); font-size: 9.5px;
+  font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  margin-right: 7px; padding: 1px 6px; border-radius: 5px;
+  border: 1px solid currentColor; opacity: 0.9; vertical-align: middle;
+}
+.due-late { color: var(--rose); font-weight: 600; }

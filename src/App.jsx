@@ -44,6 +44,7 @@ function ProgressRing({ value, size = 84, stroke = 8 }) {
 }
 
 function DueList({ rows, accent }) {
+  const catColorOf = (c) => (c === 'Shipment' ? 'var(--azure)' : c === 'ITR' ? 'var(--violet)' : 'var(--signal)');
   return (
     <div className="due-list">
       {rows
@@ -57,8 +58,13 @@ function DueList({ rows, accent }) {
                 {Math.abs(du)}<small>{du < 0 ? 'NGÀY TRỄ' : 'NGÀY NỮA'}</small>
               </div>
               <div className="d-body">
-                <div className="d-name">{r.partName}</div>
-                <div className="d-meta">{r.category} · {fmtDate(r.dueDate)} · còn {r.balance}/{r.target}</div>
+                <div className="d-name">
+                  <span className={`cat-tag cat-${r.category}`} style={{ marginRight: 8, color: catColorOf(r.category), borderColor: catColorOf(r.category) }}>
+                    {r.category}
+                  </span>
+                  {r.partName}
+                </div>
+                <div className="d-meta">{fmtDate(r.dueDate)} · còn {r.balance}/{r.target} · {r.status}</div>
               </div>
             </div>
           );
@@ -309,7 +315,7 @@ export default function App() {
                 <th onClick={() => toggleSort('completed')}>Done {arrow('completed')}</th>
                 <th onClick={() => toggleSort('balance')}>Bal {arrow('balance')}</th>
                 <th onClick={() => toggleSort('progress')}>Progress {arrow('progress')}</th>
-                <th onClick={() => toggleSort('dueDate')}>Due {arrow('dueDate')}</th>
+                <th onClick={() => toggleSort('dueDate')}>Due Date (loại) {arrow('dueDate')}</th>
                 <th onClick={() => toggleSort('status')}>Status {arrow('status')}</th>
               </tr>
             </thead>
@@ -331,8 +337,15 @@ export default function App() {
                       <span className="mono" style={{ marginLeft: 8, color: 'var(--txt-low)' }}>{pct(r.progress)}</span>
                     </td>
                     <td className={`due-tag ${dueCls}`}>
-                      {fmtDate(r.dueDate)}
-                      {r.dueDate && !isComplete && du < 0 && <span> ({Math.abs(du)}d trễ)</span>}
+                      {r.dueDate ? (
+                        <>
+                          <span className="due-kind" style={{ color: r.category === 'Shipment' ? 'var(--azure)' : r.category === 'ITR' ? 'var(--violet)' : 'var(--txt-low)' }}>
+                            {r.category}
+                          </span>
+                          <span>{fmtDate(r.dueDate)}</span>
+                          {!isComplete && du < 0 && <span className="due-late"> ({Math.abs(du)}d trễ)</span>}
+                        </>
+                      ) : '—'}
                     </td>
                     <td><span className={`badge ${isComplete ? 'completed' : 'open'}`}>
                       <span className="dot" />{r.status}
